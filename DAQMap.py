@@ -1,3 +1,4 @@
+#input: FEB, hybrid; output: layer, module
 febToLayer = {
         0.0 : 1.0,
         0.1 : 2.0,
@@ -41,6 +42,7 @@ febToLayer = {
         9.1 : -1
         }
 
+#input: layer, module; input:FEB, hybrid
 layerToFeb = {
         1.0 : 0.0,
         2.0 : 0.1,
