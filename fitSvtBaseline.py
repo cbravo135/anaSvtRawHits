@@ -10,6 +10,7 @@ import numpy as np
 import ROOT as r
 from copy import deepcopy
 from optparse import OptionParser
+from DAQMap import layerToFeb
 
 oPar = OptionParser()
 oPar.add_option("-i", "--inDir", type="string", dest="inDir",
@@ -25,49 +26,42 @@ inDir = options.inDir
 pulseH = {}
 pulseENC = {}
 
-for ical in range(0,105,5):
-    pulseH[ical] = {}
-    pulseENC[ical] = {}
-    print 'Now Fitting Ical %i'%ical
-    for cg in range(8):
-        inFile = r.TFile( inDir + '/icalScan%i_cg%i_HD.root'%(ical,cg) )
-        smData0_hh = deepcopy(inFile.smData0_hh)
-        smData2_hh = deepcopy(inFile.smData2_hh)
-        for calCH in range(16):
-            for apv in range(1,5):
-                chan = 128*apv + 8*calCH + cg
-                if chan == 0: print ical, cg, calCH, apv
-                #Extract the pedestal from sample 0
-                scData0_h = deepcopy(smData0_hh.ProjectionY('scData0_ch%i_h'%(chan), chan+1, chan+1, "e"))
-                sampleMean = scData0_h.GetMean()
-                sampleNoise = scData0_h.GetRMS()
-                gaus_f = r.TF1('gaus_f','gaus', sampleMean-4*sampleNoise, sampleMean+4*sampleNoise)
-                gaus_f.SetParameter(0, 10.0)
-                gaus_f.SetParameter(1, sampleMean)
-                gaus_f.SetParameter(2, sampleNoise)
-                scData0_h.Fit(gaus_f, 'QR')
-                ped = gaus_f.GetParameter(1)
-                #enc = gaus_f.GetParameter(2)
-                #Extract the peak from sample 2
-                scData2_h = deepcopy(smData2_hh.ProjectionY('scData2_ch%i_h'%(chan), chan+1, chan+1, "e"))
-                sampleMean = scData2_h.GetMean()
-                sampleNoise = scData2_h.GetRMS()
-                gaus_f = r.TF1('gaus_f','gaus', sampleMean-4*sampleNoise, sampleMean+4*sampleNoise)
-                gaus_f.SetParameter(0, 10.0)
-                gaus_f.SetParameter(1, sampleMean)
-                gaus_f.SetParameter(2, sampleNoise)
-                scData2_h.Fit(gaus_f, 'QR')
-                peak = gaus_f.GetParameter(1)
-                enc = gaus_f.GetParameter(2)
-                #Calculate and Fill Arrays
-                #print peak, ped
-                pulseH[ical][chan] = peak-ped
-                pulseENC[ical][chan] = enc
-                pass
-            pass
-        inFile.Close()
+for layer in range(1,14,1):
+    for module in range(4):
+        for ical in range(0,105,5):
+            pulseH[ical] = {}
+            pulseENC[ical] = {}
+            print 'Now Fitting Ical %i'%ical
+            for cg in range(8):
+                        inFile = r.TFile( inDir )
+                        histName = "smData_%s_%s_hh" %(layer,module)
+                        smData0_hh = deepcopy(getattr(inFile,histName))
+                        print layer, module
+                        for calCH in range(16):
+                            for apv in range(1,5):
+                                chan = 128*apv + 8*calCH + cg
+                                if chan == 0: print ical, cg, calCH, apv
+                                #Extract the pedestal from sample 0
+                                scData0_h = deepcopy(smData0_hh.ProjectionY('scData0_ch%i_h'%(chan), chan+1, chan+1, "e"))
+                                sampleMean = scData0_h.GetMean()
+                                sampleNoise = scData0_h.GetRMS()
+                                gaus_f = r.TF1('gaus_f','gaus', sampleMean-4*sampleNoise, sampleMean+4*sampleNoise)
+                                gaus_f.SetParameter(0, 10.0)
+                                gaus_f.SetParameter(1, sampleMean)
+                                gaus_f.SetParameter(2, sampleNoise)
+                                scData0_h.Fit(gaus_f, 'QR')
+                                ped = gaus_f.GetParameter(1)
+                                peak = gaus_f.GetParameter(1)
+                                enc = gaus_f.GetParameter(2)
+                                pulseH[ical][chan] = peak-ped
+                                pulseENC[ical][chan] = enc
+                                pass
+                            pass
+                        inFile.Close()
+                        pass
         pass
     pass
+pass
 
 outFile = r.TFile(options.outfilename,"RECREATE")
 outFile.cd()
