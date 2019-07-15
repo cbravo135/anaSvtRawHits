@@ -23,91 +23,96 @@ r.gROOT.SetBatch(True)
 
 inDir = options.inDir
 
+everything={}
 pulseH = {}
 pulseENC = {}
 
 for layer in range(1,14,1):
     for module in range(4):
+        index= layer+.1*module
+        everything[index] = [] 
         for ical in range(0,105,5):
             pulseH[ical] = {}
             pulseENC[ical] = {}
             print 'Now Fitting Ical %i'%ical
             for cg in range(8):
-                        inFile = r.TFile( inDir )
-                        histName = "smData_%s_%s_hh" %(layer,module)
-                        smData0_hh = deepcopy(getattr(inFile,histName))
-                        print layer, module
-                        for calCH in range(16):
-                            for apv in range(1,5):
-                                chan = 128*apv + 8*calCH + cg
-                                if chan == 0: print ical, cg, calCH, apv
-                                #Extract the pedestal from sample 0
-                                scData0_h = deepcopy(smData0_hh.ProjectionY('scData0_ch%i_h'%(chan), chan+1, chan+1, "e"))
-                                sampleMean = scData0_h.GetMean()
-                                sampleNoise = scData0_h.GetRMS()
-                                gaus_f = r.TF1('gaus_f','gaus', sampleMean-4*sampleNoise, sampleMean+4*sampleNoise)
-                                gaus_f.SetParameter(0, 10.0)
-                                gaus_f.SetParameter(1, sampleMean)
-                                gaus_f.SetParameter(2, sampleNoise)
-                                scData0_h.Fit(gaus_f, 'QR')
-                                ped = gaus_f.GetParameter(1)
-                                peak = gaus_f.GetParameter(1)
-                                enc = gaus_f.GetParameter(2)
-                                pulseH[ical][chan] = peak-ped
-                                pulseENC[ical][chan] = enc
-                                pass
-                            pass
-                        inFile.Close()
+                inFile = r.TFile( inDir )
+                smData0_hh = deepcopy(getattr(inFile,"smData_%s_%s_hh" %(layer,module)))
+                print layer, module
+                for calCH in range(16):
+                    for apv in range(1,5):
+                        chan = 128*apv + 8*calCH + cg
+                        if chan == 0: print ical, cg, calCH, apv
+                        #Extract the pedestal from sample 0
+                        scData0_h = deepcopy(smData0_hh.ProjectionY('scData0_ch%i_h'%(chan), chan+1, chan+1, "e"))
+                        sampleMean = scData0_h.GetMean()
+                        sampleNoise = scData0_h.GetRMS()
+                        gaus_f = r.TF1('gaus_f','gaus', sampleMean-4*sampleNoise, sampleMean+4*sampleNoise)
+                        gaus_f.SetParameter(0, 10.0)
+                        gaus_f.SetParameter(1, sampleMean)
+                        gaus_f.SetParameter(2, sampleNoise)
+                        scData0_h.Fit(gaus_f, 'QR')
+                        ped = gaus_f.GetParameter(1)
+                        peak = gaus_f.GetParameter(1)
+                        enc = gaus_f.GetParameter(2)
+                        pulseH[ical][chan] = peak-ped
+                        pulseENC[ical][chan] = enc
+                        everything[index].append(pulseH[ical][chan])
+                        everything[index].append(pulseENC[ical][chan])
                         pass
-        pass
+                    pass
+                inFile.Close()
+                pass
+            pass
+
+        outFile = r.TFile(options.outfilename,"RECREATE")
+        outFile.cd()
+        ph_g = {}
+        chList = []
+        osList = []
+        gainList = []
+        for chan in range(128,640):
+            phList = []
+            encList = []
+            icalList = []
+            for ical in pulseH.keys():
+                icalList.append(625.0 * ical)
+                #icalList.append(float(ical))
+                phList.append(pulseH[ical][chan])
+                encList.append(pulseENC[ical][chan])
+                pass
+            ph_g[chan] = r.TGraph( len(icalList), np.array(icalList), np.array(phList) )
+            ph_g[chan].SetName('ph%i_g_%i'%(chan,index))
+            ph_g[chan].SetTitle('Channel %i Pulse Heights;Ical [e^{-}];Pulse Height [ADC units]'%chan)
+            ph_g[chan].SetMarkerStyle(3)
+            p1_f = r.TF1('p1_f','[0]+[1]*x', 0.0, 5.0e4)
+            fitOffset = p1_f.SetParameter(0,0.0)
+            fitGain = p1_f.SetParameter(1,0.0)
+            ph_g[chan].Fit(p1_f,'QR')
+            fitOffset = p1_f.GetParameter(0)
+            fitGain = p1_f.GetParameter(1)
+            chList.append(float(chan))
+            gainList.append(fitGain)
+            osList.append(fitOffset)
+            pass
+
+        gain_g = r.TGraph( len(chList), np.array(chList), np.array(gainList) )
+        gain_g.SetName('gain_g')
+        gain_g.SetTitle('Gains by Channel;Channel;Gain [ADC units / e^{-}]')
+        gain_g.SetMarkerStyle(3)
+        gain_g.Write()
+
+        offset_g = r.TGraph( len(chList), np.array(chList), np.array(osList) )
+        offset_g.SetName('offset_g')
+        offset_g.SetTitle('Offsets by Channel;Channel;Offset [ADC units]')
+        offset_g.SetMarkerStyle(3)
+        offset_g.Write()
+
+        for chan in range(128,640): ph_g[chan].Write()
+        outFile.Close()
+
     pass
 pass
-
-outFile = r.TFile(options.outfilename,"RECREATE")
-outFile.cd()
-ph_g = {}
-chList = []
-osList = []
-gainList = []
-for chan in range(128,640):
-    phList = []
-    encList = []
-    icalList = []
-    for ical in pulseH.keys():
-        icalList.append(625.0 * ical)
-        #icalList.append(float(ical))
-        phList.append(pulseH[ical][chan])
-        encList.append(pulseENC[ical][chan])
-        pass
-    ph_g[chan] = r.TGraph( len(icalList), np.array(icalList), np.array(phList) )
-    ph_g[chan].SetName('ph%i_g'%chan)
-    ph_g[chan].SetTitle('Channel %i Pulse Heights;Ical [e^{-}];Pulse Height [ADC units]'%chan)
-    ph_g[chan].SetMarkerStyle(3)
-    p1_f = r.TF1('p1_f','[0]+[1]*x', 0.0, 5.0e4)
-    fitOffset = p1_f.SetParameter(0,0.0)
-    fitGain = p1_f.SetParameter(1,0.0)
-    ph_g[chan].Fit(p1_f,'QR')
-    fitOffset = p1_f.GetParameter(0)
-    fitGain = p1_f.GetParameter(1)
-    chList.append(float(chan))
-    gainList.append(fitGain)
-    osList.append(fitOffset)
-    pass
-
-gain_g = r.TGraph( len(chList), np.array(chList), np.array(gainList) )
-gain_g.SetName('gain_g')
-gain_g.SetTitle('Gains by Channel;Channel;Gain [ADC units / e^{-}]')
-gain_g.SetMarkerStyle(3)
-gain_g.Write()
-
-offset_g = r.TGraph( len(chList), np.array(chList), np.array(osList) )
-offset_g.SetName('offset_g')
-offset_g.SetTitle('Offsets by Channel;Channel;Offset [ADC units]')
-offset_g.SetMarkerStyle(3)
-offset_g.Write()
-
-for chan in range(128,640): ph_g[chan].Write()
-outFile.Close()
 
 exit()
 
