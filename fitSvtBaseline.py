@@ -27,10 +27,17 @@ everything={}
 pulseH = {}
 pulseENC = {}
 
-for layer in range(1,14,1):
+outFile = r.TFile(options.outfilename,"RECREATE")
+outFile.cd()
+ph_g = {}
+chList = []
+osList = []
+gainList = []
+
+for layer in range(1,15):
     for module in range(4):
         index= layer+.1*module
-        everything[index] = [] 
+        everything[index] = [{},{}] 
         for ical in range(0,105,5):
             pulseH[ical] = {}
             pulseENC[ical] = {}
@@ -57,29 +64,24 @@ for layer in range(1,14,1):
                         enc = gaus_f.GetParameter(2)
                         pulseH[ical][chan] = peak-ped
                         pulseENC[ical][chan] = enc
-                        everything[index].append(pulseH[ical][chan])
-                        everything[index].append(pulseENC[ical][chan])
                         pass
                     pass
                 inFile.Close()
                 pass
             pass
+            everything[index][0].update(pulseH)
+            everything[index][1].update(pulseENC)
+        
 
-        outFile = r.TFile(options.outfilename,"RECREATE")
-        outFile.cd()
-        ph_g = {}
-        chList = []
-        osList = []
-        gainList = []
         for chan in range(128,640):
             phList = []
             encList = []
             icalList = []
-            for ical in pulseH.keys():
+            for ical in everything[index][0].keys():
                 icalList.append(625.0 * ical)
                 #icalList.append(float(ical))
-                phList.append(pulseH[ical][chan])
-                encList.append(pulseENC[ical][chan])
+                phList.append(everything[index][0][ical][chan])
+                encList.append(everything[index][1][ical][chan])
                 pass
             ph_g[chan] = r.TGraph( len(icalList), np.array(icalList), np.array(phList) )
             ph_g[chan].SetName('ph%i_g_%i'%(chan,index))
