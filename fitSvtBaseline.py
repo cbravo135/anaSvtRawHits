@@ -26,13 +26,9 @@ inDir = options.inDir
 everything={}
 pulseH = {}
 pulseENC = {}
-
-outFile = r.TFile(options.outfilename,"RECREATE")
-outFile.cd()
-ph_g = {}
-chList = []
-osList = []
-gainList = []
+ph_g_dict={}
+gain_g_dict={}
+offset_g_dict={}
 
 for layer in range(1,15):
     for module in range(4):
@@ -72,6 +68,10 @@ for layer in range(1,15):
             everything[index][0].update(pulseH)
             everything[index][1].update(pulseENC)
         
+        ph_g = {}
+        chList = []
+        osList = []
+        gainList = []
 
         for chan in range(128,640):
             phList = []
@@ -102,19 +102,33 @@ for layer in range(1,15):
         gain_g.SetName('gain_g')
         gain_g.SetTitle('Gains by Channel;Channel;Gain [ADC units / e^{-}]')
         gain_g.SetMarkerStyle(3)
-        gain_g.Write()
+        gain_g_dict[index]=gain_g
 
         offset_g = r.TGraph( len(chList), np.array(chList), np.array(osList) )
         offset_g.SetName('offset_g')
         offset_g.SetTitle('Offsets by Channel;Channel;Offset [ADC units]')
         offset_g.SetMarkerStyle(3)
-        offset_g.Write()
+        offset_g_dict[index]=offset_g
 
-        for chan in range(128,640): ph_g[chan].Write()
-        outFile.Close()
-
+        ph_g_dict[index]={}
+        ph_g_dict[index].update(ph_g)
     pass
 pass
+
+
+outFile = r.TFile(options.outfilename,"RECREATE")
+outFile.cd()
+
+for gain in gain_g_dict:
+    gain.Write()
+    pass
+for offset in offset_g_dict:
+    offset.Write()
+    pass
+for ph in ph_g_dict:
+    for chan in range(128,640): ph_g[chan].Write()
+    pass
+outFile.Close()
 
 exit()
 
