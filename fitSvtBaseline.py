@@ -34,13 +34,13 @@ for layer in xrange(1,15):
         if layer < 9 and module > 1: continue
         index= layer+.1*module
         everything[index] = [{},{}] 
-        for chan in xrange(1,641):
+        for chan in xrange(640):
             if layer<5 and chan>512: continue
             means[chan] = {}
             rmss[chan] = {}
             inFile = r.TFile( inDir )
             smData0_hh = deepcopy(getattr(inFile,"smData_%s_%s_hh" %(layer,module)))
-            print layer, module
+            print layer, module, index
             scData0_h = deepcopy(smData0_hh.ProjectionY('scData0_ch%i_h'%(chan), chan+1, chan+1, "e"))
             sampleMean = scData0_h.GetMean()
             sampleNoise = scData0_h.GetRMS()
@@ -62,23 +62,23 @@ for layer in xrange(1,15):
         meanList=[]
         rmsList=[]
         null=[]
-        for chan in xrange(1,641):
+        for chan in xrange(640):
             if layer<5 and chan>512: continue
             chList.append(float(chan))
             meanList.append(float(everything[index][0][chan]))
             rmsList.append(float(everything[index][1][chan]))
-            null.append(0.0)
+            null.append(0)
             pass
 
         mean_g = r.TGraphErrors( len(chList), np.array(chList), np.array(meanList), np.array(null), np.array(rmsList) )
-        mean_g.SetName('mean_%i_g'%index)
-        mean_g.SetTitle('Means vs Channel for %i;Channel;Mean'%index)
+        mean_g.SetName('mean_%i.%i_g'%(layer,module))
+        mean_g.SetTitle('Means vs Channel for %i.%i;Channel;Mean'%(layer,module))
         mean_g.SetMarkerStyle(3)
         mean_g_dict[index]=mean_g
 
         rms_g = r.TGraph( len(chList), np.array(chList), np.array(rmsList) )
-        rms_g.SetName('rms_%i_g'%index)
-        rms_g.SetTitle('rmss vs Channel for %i;Channel;rms'%index)
+        rms_g.SetName('rms_%i.%i_g'%(layer,module))
+        rms_g.SetTitle('rmss vs Channel for %i.%i;Channel;rms'%(layer,module))
         rms_g.SetMarkerStyle(3)
         rms_g_dict[index]=rms_g
         pass
@@ -89,9 +89,13 @@ outFile = r.TFile(options.outfilename,"RECREATE")
 outFile.cd()
 
 for avg in mean_g_dict:
+    print "avg:",avg
+    print type(mean_g_dict[avg])
     mean_g_dict[avg].Write()
     pass
 for sig in rms_g_dict:
+    print "rms:",rms
+    print type(rms_g_dict[sig])
     rms_g_dict[sig].Write()
     pass
 outFile.Close()
