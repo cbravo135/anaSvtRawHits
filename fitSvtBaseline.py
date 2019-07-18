@@ -61,14 +61,16 @@ for layer in xrange(1,15):
         chList=[]
         meanList=[]
         rmsList=[]
+        null=[]
         for chan in xrange(1,641):
             if layer<5 and chan>512: continue
             chList.append(float(chan))
-            meanList.append(everything[index][0][chan])
-            rmsList.append(everything[index][1][chan])
+            meanList.append(float(everything[index][0][chan]))
+            rmsList.append(float(everything[index][1][chan]))
+            null.append(0.0)
             pass
 
-        mean_g = r.TGraphErrors( len(chList), np.array(chList), np.array(meanList), 0, np.array(rmsList) )
+        mean_g = r.TGraphErrors( len(chList), np.array(chList), np.array(meanList), np.array(null), np.array(rmsList) )
         mean_g.SetName('mean_%i_g'%index)
         mean_g.SetTitle('Means vs Channel for %i;Channel;Mean'%index)
         mean_g.SetMarkerStyle(3)
