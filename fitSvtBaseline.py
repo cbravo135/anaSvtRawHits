@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#  By Cameron Bravo <bravo@slac.stanford.edu>
+#  By Cameron Bravo <bravo@slac.stanford.edu>, modified by Aster Taylor <ataylor@slac.stanford.edu>
 #
 #      Used to analyze histogramed data (HD) produced
 #      by running makeHD on a .bin to produce a HD.root
@@ -26,19 +26,16 @@ inDir = options.inDir
 everything={}
 means={}
 rmss={}
-pulseH = {}
-pulseENC = {}
-ph_g_dict={}
 mean_g_dict={}
 rms_g_dict={}
 
-for layer in range(1,15):
-    for module in range(4):
+for layer in xrange(1,15):
+    for module in xrange(4):
         if layer < 9 and module > 1: continue
         index= layer+.1*module
         everything[index] = [{},{}] 
-           for chan in range(1,641):
-               if layer<5 and chan>512: continue
+        for chan in xrange(1,641):
+            if layer<5 and chan>512: continue
             means[chan] = {}
             rmss[chan] = {}
             inFile = r.TFile( inDir )
@@ -58,13 +55,13 @@ for layer in range(1,15):
             rmss[chan] = rms
             inFile.Close()
             pass
-            everything[index][0].update(means)
-            everything[index][1].update(rmss)
-        
+        everything[index][0].update(means)
+        everything[index][1].update(rmss)
+
         chList=[]
         meanList=[]
         rmsList=[]
-        for chan in range(1,641):
+        for chan in xrange(1,641):
             if layer<5 and chan>512: continue
             chList.append(float(chan))
             meanList.append(everything[index][0][chan])
@@ -82,8 +79,8 @@ for layer in range(1,15):
         rms_g.SetTitle('rmss vs Channel for %i;Channel;rms'%index)
         rms_g.SetMarkerStyle(3)
         rms_g_dict[index]=rms_g
+        pass
     pass
-pass
 
 
 outFile = r.TFile(options.outfilename,"RECREATE")
