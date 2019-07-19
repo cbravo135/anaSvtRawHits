@@ -57,6 +57,9 @@ for layer in xrange(1,15):
             pass
         everything[index][0].update(means)
         everything[index][1].update(rmss)
+        
+        feb=round(layerToFeb[index])
+        hybrid=int((layerToFeb[index]-feb)*10.0)
 
         chList=[]
         meanList=[]
@@ -71,14 +74,14 @@ for layer in xrange(1,15):
             pass
 
         mean_g = r.TGraphErrors( len(chList), np.array(chList), np.array(meanList), np.array(null), np.array(rmsList) )
-        mean_g.SetName('mean_%i.%i_g'%(layer,module))
-        mean_g.SetTitle('Means vs Channel for %i.%i;Channel;Mean'%(layer,module))
+        mean_g.SetName('mean_%i.%i_g'%(feb,hybrid))
+        mean_g.SetTitle('Means vs Channel for %i.%i;Channel;Mean'%(feb,hybrid))
         mean_g.SetMarkerStyle(3)
         mean_g_dict[index]=mean_g
 
         rms_g = r.TGraph( len(chList), np.array(chList), np.array(rmsList) )
-        rms_g.SetName('rms_%i.%i_g'%(layer,module))
-        rms_g.SetTitle('rmss vs Channel for %i.%i;Channel;rms'%(layer,module))
+        rms_g.SetName('rms_%i.%i_g'%(feb,hybrid))
+        rms_g.SetTitle('rmss vs Channel for %i.%i;Channel;rms'%(feb,hybrid))
         rms_g.SetMarkerStyle(3)
         rms_g_dict[index]=rms_g
         pass
