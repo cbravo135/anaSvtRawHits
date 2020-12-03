@@ -4,16 +4,16 @@ from DAQMap import *
 
 r.gSystem.Load("libevent")
 
-myF = r.TFile("run2019/hps_run9600_RawSvtHitsTree.root")
+myF = r.TFile("hps_010494/hpssvt_010494_00006_raw.root")
 
 myT = myF.HPS_Event
 
 nHits_h = {}
 nHits_hh = {}
 histName = "nHits_hw_hh"
-nHits_hh[histName] = r.TH2D(histName,histName,10,-0.5,9.5,4,-0.5,3.5)
+nHits_hh[histName] = r.TH2D(histName,"Number of Hit Strips;FEB;Hybrid",10,-0.5,9.5,4,-0.5,3.5)
 histName = "nHits_sw_hh"
-nHits_hh[histName] = r.TH2D(histName,histName,14,-0.5,13.5,4,-0.5,3.5)
+nHits_hh[histName] = r.TH2D(histName,"Number of Hit Strips;Layer;Module",14,-0.5,13.5,4,-0.5,3.5)
 histName = "nHits_h"
 nHits_h[histName] = r.TH1D(histName,"Number of Hits in Event;Number of Hits;Events",12000,0.5,12000.5)
 histName = "nMonFebs_h"
@@ -29,9 +29,9 @@ nHits_h[histName] = r.TH1D(histName,"Time to Previous Event (FEB<4);Time [ns];Ev
 histName = "lastMonBack_h"
 nHits_h[histName] = r.TH1D(histName,"Time to Previous Event (FEB>3);Time [ns];Events",1000000,0.5,1000000.5)
 histName = "nextMon_h"
-nHits_h[histName] = r.TH1D(histName,histName,1000000,0.5,1000000.5)
+nHits_h[histName] = r.TH1D(histName,"Time to Previous Trigger;Time [ns];Monster Events",1000000,0.5,1000000.5)
 histName = "trigTime_h"
-nHits_h[histName] = r.TH1D(histName,"Time to Previous Trigger;Time [ns];Events",1000000,0.5,10000000.5)
+nHits_h[histName] = r.TH1D(histName,"Time to Previous Trigger;Time [ns];Monster Events",1000000,0.5,10000000.5)
 for feb in range(10):
     histName = 'nHits%i_h'%(feb)
     nHits_h[histName] = r.TH1D(histName,"FEB %i;Number of Hits;Events"%feb,2560,0.5,2560.5)
@@ -137,7 +137,7 @@ for ev in myT:
 
 print adcs
 
-outF = r.TFile("monsters/hps_009600_SvtMonsters.root","RECREATE")
+outF = r.TFile("monsters/hps_010494_00006_anaSvtMonsters.root","RECREATE")
 fDirs = {}
 fDirs['overview'] = outF.mkdir('overview')
 fDirs['febs'] = outF.mkdir('febs')
